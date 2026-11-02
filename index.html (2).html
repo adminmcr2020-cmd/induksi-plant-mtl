@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Induksi Karyawan Dept Plant - PT Mutiara Tanjung Lestari</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf.js for direct PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        industrial: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            amber: '#f59e0b',
+                            amberDark: '#d97706',
+                            mtlBlue: '#004b93',
+                            mtlYellow: '#ffd100'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .workshop-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid #334155;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .print-card { border: none !important; background: white !important; color: black !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between custom-scrollbar">
+
+    <!-- HEADER / NAVBAR -->
+    <header class="bg-slate-900 border-b border-slate-700 sticky top-0 z-30 shadow-xl no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showSection('dashboard')">
+                <!-- SVG Logo MTL (Mutiara Tanjung Lestari) -->
+                <div class="relative w-12 h-10 flex items-center justify-center bg-slate-800 rounded p-1 border border-amber-500/30">
+                    <svg viewBox="0 0 100 70" class="w-full h-full">
+                        <!-- Diamond Logo Outer Blue -->
+                        <polygon points="50,2 98,35 50,68 2,35" fill="#004b93" stroke="#ffffff" stroke-width="2"/>
+                        <!-- Inner Diamond Yellow -->
+                        <polygon points="50,12 85,35 50,58 15,35" fill="#ffd100"/>
+                        <!-- Text MTL -->
+                        <text x="50" y="42" font-family="Arial, sans-serif" font-weight="900" font-size="22" fill="#000000" text-anchor="middle">MTL</text>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-wide text-white uppercase flex items-center gap-2">
+                        <span>INDUKSI KARYAWAN DEPT PLANT</span>
+                        <span class="bg-amber-500 text-slate-950 text-xs font-bold px-2 py-0.5 rounded uppercase">PLANT SYSTEM</span>
+                    </h1>
+                    <p class="text-xs text-amber-400 font-medium">PT MUTIARA TANJUNG LESTARI</p>
+                </div>
+            </div>
+
+            <!-- Search Bar Top & Admin Button -->
+            <div class="flex items-center space-x-3 w-full sm:w-auto">
+                <form onsubmit="handleSearch(event)" class="relative flex-1 sm:w-80">
+                    <input type="text" id="searchInput" placeholder="Cari Nama / SID Karyawan..." 
+                           class="w-full bg-slate-800 text-slate-100 placeholder-slate-400 text-sm rounded-lg pl-10 pr-10 py-2 border border-slate-600 focus:outline-none focus:border-amber-500 transition-all">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+                    <button type="submit" title="Cari Karyawan" class="absolute right-1 top-1 bg-amber-500 hover:bg-amber-600 text-slate-950 px-2 py-1.5 rounded-md text-xs font-bold transition-colors">
+                        Enter
+                    </button>
+                </form>
+
+                <button onclick="openAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 px-3 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition-all shadow-md">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span class="hidden md:inline">Admin</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- ================= PAGE 1: PUBLIC DASHBOARD ================= -->
+        <section id="dashboardSection" class="space-y-6">
+            
+            <!-- Banner / Info Box -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-hard-hat text-amber-500"></i> Selamat Datang di Portal Induksi Keselamatan Dept Plant
+                    </h2>
+                    <p class="text-sm text-slate-300 mt-1">
+                        Cari Nama atau SID Karyawan pada kolom pencarian di atas untuk memulai atau mengisi Form Induksi Karyawan.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-700 text-xs">
+                    <i class="fa-solid fa-clock text-amber-400"></i>
+                    <span>Tanggal: <strong id="currentDateText" class="text-amber-400"></strong></span>
+                </div>
+            </div>
+
+            <!-- Stats & Chart Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Chart Box -->
+                <div class="lg:col-span-2 workshop-card p-5 rounded-xl shadow-lg border border-slate-700">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-3">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-amber-500"></i> Statistik Induksi & Fatigue Management (3 Bulan Terakhir)
+                        </h3>
+                        <span id="chartRangeBadge" class="text-xs bg-slate-800 text-amber-400 font-bold px-2.5 py-1 rounded-full border border-slate-600">3 Bulan Terakhir</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="inductionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Summary Cards -->
+                <div class="space-y-4 flex flex-col justify-between">
+                    <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-400 font-semibold uppercase">Total Karyawan Terdaftar</p>
+                                <h4 id="statTotalMaster" class="text-2xl font-black text-amber-400 mt-1">0</h4>
+                            </div>
+                            <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-lg flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-400 font-semibold uppercase">Total Karyawan Telah Induksi</p>
+                                <h4 id="statTotalInducted" class="text-2xl font-black text-emerald-400 mt-1">0</h4>
+                            </div>
+                            <div class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-id-card-clip"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-xl shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-400 font-semibold uppercase">Hasil Fatigue Management Selesai</p>
+                                <h4 id="statTotalFatigue" class="text-2xl font-black text-cyan-400 mt-1">0</h4>
+                            </div>
+                            <div class="w-12 h-12 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-lg flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-heart-pulse"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Daftar Karyawan Selesai Induksi -->
+            <div class="workshop-card p-5 rounded-xl border border-slate-700 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-amber-500"></i> Daftar Karyawan Telah Induksi
+                        </h3>
+                        <p class="text-xs text-slate-400">Data karyawan Dept Plant yang sudah menyelesaikan prosedur induksi keselamatan</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900/90 text-amber-400 uppercase text-xs border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">No</th>
+                                <th class="p-3">Foto</th>
+                                <th class="p-3">Nama Karyawan</th>
+                                <th class="p-3">SID / NIK</th>
+                                <th class="p-3">Jabatan / Perusahaan</th>
+                                <th class="p-3">Jenis Induksi</th>
+                                <th class="p-3">Tgl Induksi</th>
+                                <th class="p-3 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="publicInductionTable" class="divide-y divide-slate-800">
+                            <!-- Rows loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= PAGE 2: FORM / LEMBAR INDUKSI KARYAWAN ================= -->
+        <section id="formSection" class="hidden space-y-6">
+            
+            <button onclick="showSection('dashboard')" class="no-print bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-arrow-left"></i> Kembali ke Dasbor
+            </button>
+
+            <!-- Sheet / Form Card -->
+            <div class="workshop-card p-6 sm:p-8 rounded-2xl border-2 border-slate-700 shadow-2xl max-w-4xl mx-auto print-card">
+                
+                <!-- Title Header -->
+                <div class="text-center border-b-2 border-amber-500 pb-4 mb-6">
+                    <div class="flex justify-center items-center gap-3 mb-2">
+                        <div class="w-10 h-10 bg-slate-800 rounded p-1 border border-amber-500/50">
+                            <svg viewBox="0 0 100 70" class="w-full h-full">
+                                <polygon points="50,2 98,35 50,68 2,35" fill="#004b93" stroke="#ffffff" stroke-width="2"/>
+                                <polygon points="50,12 85,35 50,58 15,35" fill="#ffd100"/>
+                                <text x="50" y="42" font-family="Arial, sans-serif" font-weight="900" font-size="22" fill="#000000" text-anchor="middle">MTL</text>
+                            </svg>
+                        </div>
+                        <span class="text-xs font-bold text-slate-400 tracking-widest uppercase">PT MUTIARA TANJUNG LESTARI - DEPT PLANT</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white uppercase tracking-wider">LEMBAR INDUKSI KARYAWAN DEPT PLANT</h2>
+                </div>
+
+                <!-- Section: PROFIL -->
+                <div class="mb-8">
+                    <h3 class="text-sm font-extrabold text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2 border-b border-slate-700 pb-1">
+                        <i class="fa-solid fa-id-card"></i> PROFIL KARYAWAN
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+                        <!-- Foto Profil (Kiri) -->
+                        <div class="md:col-span-1 flex flex-col items-center justify-center">
+                            <div class="w-32 h-40 bg-slate-800 border-2 border-amber-500/50 rounded-lg overflow-hidden shadow-md flex items-center justify-center relative">
+                                <img id="empFormFoto" src="" alt="Foto Karyawan" class="w-full h-full object-cover hidden">
+                                <i id="empFormFotoPlaceholder" class="fa-solid fa-user text-5xl text-slate-600"></i>
+                            </div>
+                            <span class="text-xs text-slate-400 mt-2 font-medium">Foto Identitas</span>
+                        </div>
+
+                        <!-- Identitas Diri (Kanan) -->
+                        <div class="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/80">
+                                <span class="text-xs text-slate-400 block uppercase font-bold">Nama Karyawan</span>
+                                <span id="empFormNama" class="font-bold text-white text-base">-</span>
+                            </div>
+                            <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/80">
+                                <span class="text-xs text-slate-400 block uppercase font-bold">Tanggal Lahir</span>
+                                <span id="empFormTglLahir" class="font-semibold text-slate-200">-</span>
+                            </div>
+                            <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/80">
+                                <span class="text-xs text-slate-400 block uppercase font-bold">NIK</span>
+                                <span id="empFormNik" class="font-semibold text-slate-200">-</span>
+                            </div>
+                            <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/80">
+                                <span class="text-xs text-slate-400 block uppercase font-bold">SID</span>
+                                <span id="empFormSid" class="font-bold text-amber-400">-</span>
+                            </div>
+                            <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/80">
+                                <span class="text-xs text-slate-400 block uppercase font-bold">Jabatan</span>
+                                <span id="empFormJabatan" class="font-semibold text-slate-200">-</span>
+                            </div>
+                            <div class="bg-slate-800/60 p-2.5 rounded border border-slate-700/80">
+                                <span class="text-xs text-slate-400 block uppercase font-bold">Nama Perusahaan</span>
+                                <span id="empFormPerusahaan" class="font-semibold text-slate-200">-</span>
+                            </div>
+                            <div class="sm:col-span-2 bg-slate-800/60 p-2.5 rounded border border-slate-700/80">
+                                <span class="text-xs text-slate-400 block uppercase font-bold">Nomor HP</span>
+                                <span id="empFormNoHp" class="font-semibold text-slate-200">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Isian Induksi -->
+                <form id="inductionEntryForm" onsubmit="submitInductionForm(event)" class="space-y-5">
+                    <input type="hidden" id="empFormEmpId">
+
+                    <!-- 1. Jenis Induksi -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-200 mb-1">
+                            1. Jenis Induksi <span class="text-amber-500">*</span>
+                        </label>
+                        <select id="fieldJenisInduksi" required class="w-full bg-slate-900 text-slate-100 border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 focus:outline-none">
+                            <option value="">-- Pilih Jenis Induksi --</option>
+                            <option value="Induksi PJO">Induksi PJO</option>
+                            <option value="Induksi Karyawan Baru">Induksi Karyawan Baru</option>
+                            <option value="Re-Induksi">Re-Induksi</option>
+                            <option value="Induksi Tamu">Induksi Tamu</option>
+                            <option value="Induksi Incident">Induksi Incident</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. Penyampaian Induksi -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-200 mb-1">
+                            2. Penyampaian Induksi (Ringkasan / Essay) <span class="text-amber-500">*</span>
+                        </label>
+                        <textarea id="fieldPenyampaian" rows="3" required placeholder="Tuliskan poin-poin materi induksi yang disampaikan (prosedur keselamatan workshop, penggunaan APD, APAR, lockout-tagout, dll)..." class="w-full bg-slate-900 text-slate-100 border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <!-- 3. Nilai Fatigue Management -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-200 mb-1">
+                            3. Nilai Fatigue Management (Essay / Evaluasi Fit Untuk Bekerja) <span class="text-amber-500">*</span>
+                        </label>
+                        <textarea id="fieldFatigue" rows="3" required placeholder="Tuliskan hasil evaluasi jam tidur, kondisi kebugaran tubuh, serta kesiapan mental karyawan..." class="w-full bg-slate-900 text-slate-100 border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <!-- 4. Upload Foto Induksi -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-200 mb-1">
+                            4. Upload Foto Bukti Induksi <span class="text-amber-500">*</span>
+                        </label>
+                        <div class="flex flex-col sm:flex-row items-center gap-4 bg-slate-900/60 p-4 border border-dashed border-slate-600 rounded-lg">
+                            <input type="file" id="fieldFotoInduksi" accept="image/*" onchange="previewInductionPhoto(event)" required class="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 cursor-pointer">
+                            <div id="inductionPhotoPreviewBox" class="w-24 h-24 bg-slate-800 border border-slate-700 rounded flex items-center justify-center overflow-hidden hidden">
+                                <img id="inductionPhotoPreview" src="" alt="Preview Bukti Foto" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-4 border-t border-slate-700">
+                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-3.5 px-6 rounded-xl shadow-lg text-base tracking-wide uppercase transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> SUBMIT INDUKSI KARYAWAN
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </section>
+
+        <!-- ================= PAGE 3: ADMIN DASHBOARD ================= -->
+        <section id="adminSection" class="hidden space-y-6">
+            
+            <!-- Admin Top Bar -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-4 rounded-xl border border-amber-500/40">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-amber-500 text-slate-950 rounded-lg font-bold">
+                        <i class="fa-solid fa-user-gear text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-white">DASBOR ADMIN - PT MTL DEPT PLANT</h2>
+                        <p class="text-xs text-slate-400">Pengelolaan Master Data Identitas Karyawan & Arsip Induksi</p>
+                    </div>
+                </div>
+                <button onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout Admin
+                </button>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-slate-700 gap-2">
+                <button id="tabBtnMaster" onclick="switchAdminTab('master')" class="px-4 py-2.5 text-sm font-bold rounded-t-lg bg-amber-500 text-slate-950 flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear"></i> Master Data Karyawan
+                </button>
+                <button id="tabBtnArchive" onclick="switchAdminTab('archive')" class="px-4 py-2.5 text-sm font-bold rounded-t-lg bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-box-archive"></i> Arsip & Laporan Induksi
+                </button>
+            </div>
+
+            <!-- TAB 1: MASTER DATA KARYAWAN -->
+            <div id="adminMasterTab" class="workshop-card p-5 rounded-xl border border-slate-700">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white">Master Identitas Karyawan</h3>
+                        <p class="text-xs text-slate-400">Kelola data seluruh karyawan Dept Plant</p>
+                    </div>
+                    <button onclick="openAddEmployeeModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-2 transition-colors shadow">
+                        <i class="fa-solid fa-plus font-bold"></i> Tambah Karyawan Baru
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900 text-amber-400 uppercase text-xs border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Foto</th>
+                                <th class="p-3">Nama</th>
+                                <th class="p-3">Tgl Lahir</th>
+                                <th class="p-3">NIK</th>
+                                <th class="p-3">SID</th>
+                                <th class="p-3">Jabatan</th>
+                                <th class="p-3">Perusahaan</th>
+                                <th class="p-3">No. HP</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="masterEmployeeTable" class="divide-y divide-slate-800">
+                            <!-- JS loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: ARSIP DATA INDUKSI -->
+            <div id="adminArchiveTab" class="hidden workshop-card p-5 rounded-xl border border-slate-700 space-y-4">
+                
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div>
+                        <h3 class="text-base font-bold text-white">Arsip Data & Rekap Induksi</h3>
+                        <p class="text-xs text-slate-400">Filter berdasarkan rentang tanggal, jenis induksi, dan nama perusahaan</p>
+                    </div>
+                    
+                    <!-- Export Actions -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                            <i class="fa-solid fa-file-excel"></i> Download Excel
+                        </button>
+                        <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                            <i class="fa-solid fa-file-pdf"></i> Download PDF
+                        </button>
+                        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                            <i class="fa-solid fa-print"></i> Cetak
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block text-slate-400 font-semibold mb-1">Dari Tanggal:</label>
+                        <input type="date" id="filterStartDate" onchange="applyArchiveFilter()" class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2 focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 font-semibold mb-1">Sampai Tanggal:</label>
+                        <input type="date" id="filterEndDate" onchange="applyArchiveFilter()" class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2 focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 font-semibold mb-1">Jenis Induksi:</label>
+                        <select id="filterJenisInduksi" onchange="applyArchiveFilter()" class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2 focus:border-amber-500">
+                            <option value="ALL">Semua Jenis Induksi</option>
+                            <option value="Induksi PJO">Induksi PJO</option>
+                            <option value="Induksi Karyawan Baru">Induksi Karyawan Baru</option>
+                            <option value="Re-Induksi">Re-Induksi</option>
+                            <option value="Induksi Tamu">Induksi Tamu</option>
+                            <option value="Induksi Incident">Induksi Incident</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 font-semibold mb-1">Nama Perusahaan:</label>
+                        <select id="filterPerusahaan" onchange="applyArchiveFilter()" class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2 focus:border-amber-500">
+                            <option value="ALL">Semua Perusahaan</option>
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Table Arsip -->
+                <div class="overflow-x-auto custom-scrollbar" id="pdfReportContainer">
+                    <table id="archiveTableElement" class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900 text-amber-400 uppercase text-xs border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Tgl Induksi</th>
+                                <th class="p-3">Nama</th>
+                                <th class="p-3">SID</th>
+                                <th class="p-3">Perusahaan</th>
+                                <th class="p-3">Jenis Induksi</th>
+                                <th class="p-3">Penyampaian</th>
+                                <th class="p-3">Fatigue Management</th>
+                                <th class="p-3">Foto</th>
+                                <th class="p-3 text-center no-print">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="archiveInductionTable" class="divide-y divide-slate-800">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-500 no-print">
+        <p>© 2026 PT Mutiara Tanjung Lestari - Dept Plant Safety Induction System.</p>
+    </footer>
+
+    <!-- MODAL CONFIRMATION DELETE (Tampilan Hapus Kustom & Pasti Berfungsi) -->
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-slate-900 border-2 border-red-500 rounded-2xl p-6 w-full max-w-md shadow-2xl text-center space-y-4">
+            <div class="w-16 h-16 bg-red-500/20 text-red-400 border border-red-500/50 rounded-full flex items-center justify-center mx-auto text-3xl">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Konfirmasi Hapus Data</h3>
+            <p id="deleteConfirmMessage" class="text-xs text-slate-300">Apakah Anda yakin ingin menghapus data ini?</p>
+            <div class="pt-3 flex justify-center gap-3">
+                <button type="button" onclick="closeModal('deleteConfirmModal')" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-slate-700">Batal</button>
+                <button type="button" id="confirmDeleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase shadow-lg">Ya, Hapus Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: LOGIN ADMIN -->
+    <div id="adminAuthModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-black text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-lock"></i> OTENTIKASI ADMIN
+                </h3>
+                <button onclick="closeModal('adminAuthModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-300">Masukkan kata sandi khusus untuk mengakses dasbor Administrator MTL Dept Plant.</p>
+            <form onsubmit="verifyAdminPassword(event)">
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-300 uppercase">Password Admin</label>
+                    <input type="password" id="adminPasswordInput" placeholder="Masukkan password..." required class="w-full bg-slate-800 text-white border border-slate-700 rounded-lg p-3 text-sm focus:border-amber-500 focus:outline-none">
+                </div>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('adminAuthModal')" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-slate-700">Batal</button>
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-5 py-2 rounded-lg text-xs font-bold uppercase">Login Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: TAMBAH / EDIT KARYAWAN -->
+    <div id="employeeModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl my-8">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 id="employeeModalTitle" class="text-base font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> Tambah Master Karyawan
+                </h3>
+                <button onclick="closeModal('employeeModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="employeeForm" onsubmit="saveEmployee(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editEmpId">
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Nama Lengkap *</label>
+                    <input type="text" id="mNama" required class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2.5 focus:border-amber-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Tanggal Lahir *</label>
+                        <input type="date" id="mTglLahir" required class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2.5 focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">NIK *</label>
+                        <input type="text" id="mNik" required class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2.5 focus:border-amber-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-amber-400 mb-1">SID (Unique ID) *</label>
+                        <input type="text" id="mSid" required class="w-full bg-slate-800 text-white border border-amber-500/50 rounded p-2.5 focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Jabatan *</label>
+                        <input type="text" id="mJabatan" required class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2.5 focus:border-amber-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Nama Perusahaan *</label>
+                        <input type="text" id="mPerusahaan" required placeholder="PT MTL / Subkon" class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2.5 focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Nomor HP *</label>
+                        <input type="text" id="mNoHp" required class="w-full bg-slate-800 text-white border border-slate-700 rounded p-2.5 focus:border-amber-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Foto Profil Karyawan</label>
+                    <input type="file" id="mFotoFile" accept="image/*" onchange="handleFotoUpload(event)" class="w-full bg-slate-800 text-slate-400 border border-slate-700 rounded p-1.5 text-xs">
+                    <input type="hidden" id="mFotoBase64">
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-800 mt-4">
+                    <button type="button" onclick="closeModal('employeeModal')" class="bg-slate-800 text-slate-300 px-4 py-2 rounded text-xs font-bold hover:bg-slate-700">Batal</button>
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-5 py-2 rounded text-xs font-extrabold uppercase">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP NOTIFIKASI SUKSES -->
+    <div id="successModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border-2 border-emerald-500 rounded-3xl p-8 w-full max-w-lg shadow-2xl text-center space-y-4 relative overflow-hidden">
+            <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto text-4xl mb-2 animate-bounce">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h2 class="text-3xl font-black text-emerald-400 tracking-wide">BERHASIL INDUKSI</h2>
+            <p class="text-lg font-bold text-slate-100">Selamat Bekerja Dengan Aman Dan Selamat</p>
+            <p class="text-xs text-slate-400">Data induksi telah berhasil tersimpan dalam sistem arsip K3 Dept Plant PT Mutiara Tanjung Lestari.</p>
+            <div class="pt-4">
+                <button onclick="closeSuccessModalAndReturn()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-8 py-3 rounded-xl shadow-lg uppercase text-sm tracking-wider">
+                    Kembali ke Dasbor
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // Data INITIAL MASTER KARYAWAN
+        let employees = [
+            { id: 'EMP-001', nama: 'Budi Santoso', tglLahir: '1990-05-14', nik: '6403011405900001', sid: 'MTL-PLANT-001', jabatan: 'Mechanic Leader', perusahaan: 'PT Mutiara Tanjung Lestari', noHp: '08125551234', foto: '' },
+            { id: 'EMP-002', nama: 'Agus Setiawan', tglLahir: '1993-08-20', nik: '6403012008930002', sid: 'MTL-PLANT-002', jabatan: 'Auto Electrician', perusahaan: 'PT Mutiara Tanjung Lestari', noHp: '08134445678', foto: '' },
+            { id: 'EMP-003', nama: 'Rudi Hermawan', tglLahir: '1988-11-02', nik: '6403010211880003', sid: 'SUB-PLANT-101', jabatan: 'Welder', perusahaan: 'PT UT School', noHp: '08219998877', foto: '' },
+            { id: 'EMP-004', nama: 'Dedi Kurniawan', tglLahir: '1995-02-10', nik: '6403011002950004', sid: 'MTL-PLANT-003', jabatan: 'Tyreman', perusahaan: 'PT Mutiara Tanjung Lestari', noHp: '08521112233', foto: '' }
+        ];
+
+        // Helper function to get YYYY-MM-DD formatted date relative to current month offset
+        function getRelativeMonthDate(monthOffset, day) {
+            const now = new Date();
+            const d = new Date(now.getFullYear(), now.getMonth() + monthOffset, day);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Data INITIAL INDUKSI RECORDS (Dynamic Dates)
+        let inductionRecords = [
+            {
+                id: 'IND-101',
+                empId: 'EMP-001',
+                nama: 'Budi Santoso',
+                sid: 'MTL-PLANT-001',
+                perusahaan: 'PT Mutiara Tanjung Lestari',
+                jenisInduksi: 'Induksi PJO',
+                penyampaian: 'Sosialisasi SOP Perbaikan Heavy Equipment di Workshop, Prosedur LOTO & JSA.',
+                fatigueVal: 'Kondisi Fit, Tidur 7.5 jam, tidak ada riwayat penyakit kronis hari ini.',
+                fotoInduksi: '',
+                tglInduksi: getRelativeMonthDate(-2, 10) // 2 months ago
+            },
+            {
+                id: 'IND-102',
+                empId: 'EMP-002',
+                nama: 'Agus Setiawan',
+                sid: 'MTL-PLANT-002',
+                perusahaan: 'PT Mutiara Tanjung Lestari',
+                jenisInduksi: 'Re-Induksi',
+                penyampaian: 'Penyegaran K3 berkala penggunaan APD Khusus Listrik dan APAR.',
+                fatigueVal: 'Skor Fatigue Normal, istirahat cukup, siap bekerja shift siang.',
+                fotoInduksi: '',
+                tglInduksi: getRelativeMonthDate(-1, 15) // 1 month ago
+            },
+            {
+                id: 'IND-103',
+                empId: 'EMP-003',
+                nama: 'Rudi Hermawan',
+                sid: 'SUB-PLANT-101',
+                perusahaan: 'PT UT School',
+                jenisInduksi: 'Induksi Tamu',
+                penyampaian: 'Aturan umum area workshop Plant MTL, titik kumpul darurat & APD wajib.',
+                fatigueVal: 'Sehat jasmani rohani, masa kunjungan 3 hari.',
+                fotoInduksi: '',
+                tglInduksi: getRelativeMonthDate(0, 2) // Current month
+            }
+        ];
+
+        let inductionChartInstance = null;
+        let isAdminLoggedIn = false;
+        let pendingDeleteAction = null;
+
+        // ON INIT
+        window.onload = function() {
+            // Load LocalStorage if available
+            if(localStorage.getItem('mtl_employees')) {
+                employees = JSON.parse(localStorage.getItem('mtl_employees'));
+            }
+            if(localStorage.getItem('mtl_inductionRecords')) {
+                inductionRecords = JSON.parse(localStorage.getItem('mtl_inductionRecords'));
+            }
+
+            document.getElementById('currentDateText').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            renderDashboard();
+            renderMasterEmployeeTable();
+            renderArchiveTable();
+            initChart();
+        };
+
+        function saveDataToStorage() {
+            localStorage.setItem('mtl_employees', JSON.stringify(employees));
+            localStorage.setItem('mtl_inductionRecords', JSON.stringify(inductionRecords));
+        }
+
+        // NAVIGATION & DASHBOARD RENDER
+        function showSection(sectionName) {
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('formSection').classList.add('hidden');
+            document.getElementById('adminSection').classList.add('hidden');
+
+            if(sectionName === 'dashboard') {
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                renderDashboard();
+            } else if(sectionName === 'form') {
+                document.getElementById('formSection').classList.remove('hidden');
+            } else if(sectionName === 'admin') {
+                document.getElementById('adminSection').classList.remove('hidden');
+                renderMasterEmployeeTable();
+                renderArchiveTable();
+            }
+        }
+
+        function renderDashboard() {
+            // Update Stat Cards
+            document.getElementById('statTotalMaster').innerText = employees.length;
+            document.getElementById('statTotalInducted').innerText = inductionRecords.length;
+            
+            const fatigueCount = inductionRecords.filter(r => r.fatigueVal && r.fatigueVal.trim() !== '').length;
+            document.getElementById('statTotalFatigue').innerText = fatigueCount;
+
+            // Render Public Table (Daftar Karyawan Telah Induksi)
+            const tbody = document.getElementById('publicInductionTable');
+            tbody.innerHTML = '';
+
+            if(inductionRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500 text-xs">Belum ada data induksi karyawan.</td></tr>`;
+                return;
+            }
+
+            inductionRecords.forEach((rec, idx) => {
+                const emp = employees.find(e => e.id === rec.empId) || {};
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50 border-b border-slate-800 text-xs';
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-400">${idx + 1}</td>
+                    <td class="p-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center">
+                            ${emp.foto ? `<img src="${emp.foto}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-slate-500 text-xs"></i>`}
+                        </div>
+                    </td>
+                    <td class="p-3 font-bold text-white">${rec.nama}</td>
+                    <td class="p-3 font-mono text-amber-400">${rec.sid}</td>
+                    <td class="p-3">${emp.jabatan || '-'} / <br><span class="text-slate-400 text-[11px]">${rec.perusahaan}</span></td>
+                    <td class="p-3"><span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded font-semibold">${rec.jenisInduksi}</span></td>
+                    <td class="p-3 text-slate-300">${formatDateIndo(rec.tglInduksi)}</td>
+                    <td class="p-3 text-center">
+                        <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">
+                            <i class="fa-solid fa-circle-check"></i> Telah Induksi
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if(inductionChartInstance) {
+                updateChartData();
+            }
+        }
+
+        // DYNAMIC 3 MONTHS CALCULATION
+        function getLast3MonthsInfo() {
+            const now = new Date();
+            const months = [];
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+            for (let i = 2; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push({
+                    year: d.getFullYear(),
+                    monthIndex: d.getMonth(),
+                    label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+                });
+            }
+            return months;
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('inductionChart').getContext('2d');
+            const monthInfo = getLast3MonthsInfo();
+            
+            // Set Badge Label
+            document.getElementById('chartRangeBadge').innerText = `${monthInfo[0].label} - ${monthInfo[2].label}`;
+
+            const counts = getChartMonthlyData(monthInfo);
+
+            inductionChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthInfo.map(m => m.label),
+                    datasets: [
+                        {
+                            label: 'Jumlah Karyawan Induksi',
+                            data: counts.inductions,
+                            backgroundColor: '#f59e0b',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Mengerjakan Fatigue Management',
+                            data: counts.fatigues,
+                            backgroundColor: '#06b6d4',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#cbd5e1', font: { family: 'Inter', size: 12 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#94a3b8', stepSize: 1 },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartData() {
+            if(!inductionChartInstance) return;
+            const monthInfo = getLast3MonthsInfo();
+            document.getElementById('chartRangeBadge').innerText = `${monthInfo[0].label} - ${monthInfo[2].label}`;
+            
+            const counts = getChartMonthlyData(monthInfo);
+            inductionChartInstance.data.labels = monthInfo.map(m => m.label);
+            inductionChartInstance.data.datasets[0].data = counts.inductions;
+            inductionChartInstance.data.datasets[1].data = counts.fatigues;
+            inductionChartInstance.update();
+        }
+
+        function getChartMonthlyData(monthInfo) {
+            let inductions = [0, 0, 0];
+            let fatigues = [0, 0, 0];
+
+            inductionRecords.forEach(r => {
+                if(!r.tglInduksi) return;
+                const d = new Date(r.tglInduksi);
+                const m = d.getMonth();
+                const y = d.getFullYear();
+
+                monthInfo.forEach((info, idx) => {
+                    if(y === info.year && m === info.monthIndex) {
+                        inductions[idx]++;
+                        if(r.fatigueVal && r.fatigueVal.trim() !== '') {
+                            fatigues[idx]++;
+                        }
+                    }
+                });
+            });
+
+            return { inductions, fatigues };
+        }
+
+        // DELETE EMPLOYEE FUNCTION (Master Data Karyawan)
+        function deleteEmployee(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if(!emp) return;
+
+            document.getElementById('deleteConfirmMessage').innerHTML = `Apakah Anda yakin ingin menghapus data karyawan <strong>"${emp.nama}"</strong> (SID: <span class="text-amber-400">${emp.sid}</span>)?<br><span class="text-red-400 font-semibold mt-1 block">Tindakan ini tidak dapat dibatalkan.</span>`;
+            
+            document.getElementById('confirmDeleteBtn').onclick = function() {
+                employees = employees.filter(e => e.id !== empId);
+                saveDataToStorage();
+                renderMasterEmployeeTable();
+                renderDashboard();
+                closeModal('deleteConfirmModal');
+            };
+
+            document.getElementById('deleteConfirmModal').classList.remove('hidden');
+        }
+
+        // DELETE INDUCTION RECORD FUNCTION (Arsip Induksi)
+        function deleteInductionRecord(recId) {
+            const rec = inductionRecords.find(r => r.id === recId);
+            if(!rec) return;
+
+            document.getElementById('deleteConfirmMessage').innerHTML = `Apakah Anda yakin ingin menghapus rekap induksi atas nama <strong>"${rec.nama}"</strong> tanggal <strong>${formatDateIndo(rec.tglInduksi)}</strong>?`;
+
+            document.getElementById('confirmDeleteBtn').onclick = function() {
+                inductionRecords = inductionRecords.filter(r => r.id !== recId);
+                saveDataToStorage();
+                renderArchiveTable();
+                renderDashboard();
+                closeModal('deleteConfirmModal');
+            };
+
+            document.getElementById('deleteConfirmModal').classList.remove('hidden');
+        }
+
+        // RENDER ARCHIVE TABLE WITH ACTION BUTTONS
+        function renderArchiveTable() {
+            populatePerusahaanFilterDropdown();
+            applyArchiveFilter();
+        }
+
+        function populatePerusahaanFilterDropdown() {
+            const dropdown = document.getElementById('filterPerusahaan');
+            const currentVal = dropdown.value;
+            
+            const companies = Array.from(new Set(employees.map(e => e.perusahaan))).filter(Boolean);
+            dropdown.innerHTML = `<option value="ALL">Semua Perusahaan</option>`;
+            companies.forEach(c => {
+                dropdown.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+
+            dropdown.value = currentVal || "ALL";
+        }
+
+        function applyArchiveFilter() {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const jenis = document.getElementById('filterJenisInduksi').value;
+            const perusahaan = document.getElementById('filterPerusahaan').value;
+
+            let filtered = inductionRecords.filter(rec => {
+                let matchDate = true;
+                if(startDate && rec.tglInduksi < startDate) matchDate = false;
+                if(endDate && rec.tglInduksi > endDate) matchDate = false;
+
+                let matchJenis = (jenis === 'ALL' || rec.jenisInduksi === jenis);
+                let matchPerusahaan = (perusahaan === 'ALL' || rec.perusahaan === perusahaan);
+
+                return matchDate && matchJenis && matchPerusahaan;
+            });
+
+            const tbody = document.getElementById('archiveInductionTable');
+            tbody.innerHTML = '';
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500 text-xs">Tidak ada data induksi yang sesuai dengan filter.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50 border-b border-slate-800 text-xs';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-300">${formatDateIndo(rec.tglInduksi)}</td>
+                    <td class="p-3 font-bold text-white">${rec.nama}</td>
+                    <td class="p-3 text-amber-400 font-mono">${rec.sid}</td>
+                    <td class="p-3">${rec.perusahaan}</td>
+                    <td class="p-3"><span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded">${rec.jenisInduksi}</span></td>
+                    <td class="p-3 text-slate-300 max-w-xs truncate" title="${rec.penyampaian}">${rec.penyampaian}</td>
+                    <td class="p-3 text-slate-300 max-w-xs truncate" title="${rec.fatigueVal}">${rec.fatigueVal}</td>
+                    <td class="p-3">
+                        ${rec.fotoInduksi ? `
+                            <div class="w-10 h-10 rounded border border-slate-700 overflow-hidden cursor-pointer" onclick="viewPhoto('${rec.fotoInduksi}')">
+                                <img src="${rec.fotoInduksi}" class="w-full h-full object-cover">
+                            </div>
+                        ` : `<span class="text-slate-600 italic">No Photo</span>`}
+                    </td>
+                    <td class="p-3 text-center space-x-1 no-print">
+                        <button onclick="printIndividualInductionSheet('${rec.id}')" title="Cetak Lembar Induksi" class="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 p-1.5 rounded hover:bg-cyan-500 hover:text-slate-950 transition-colors">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </button>
+                        <button onclick="deleteInductionRecord('${rec.id}')" title="Hapus Arsip Induksi" class="bg-red-500/20 text-red-400 border border-red-500/40 p-1.5 rounded hover:bg-red-600 hover:text-white transition-colors">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // PRINT INDIVIDUAL SHEET FROM ARCHIVE
+        function printIndividualInductionSheet(recId) {
+            const rec = inductionRecords.find(r => r.id === recId);
+            if(!rec) return;
+            const emp = employees.find(e => e.id === rec.empId) || {};
+
+            openInductionForm(emp);
+            document.getElementById('fieldJenisInduksi').value = rec.jenisInduksi;
+            document.getElementById('fieldPenyampaian').value = rec.penyampaian;
+            document.getElementById('fieldFatigue').value = rec.fatigueVal;
+            
+            if(rec.fotoInduksi) {
+                document.getElementById('inductionPhotoPreview').src = rec.fotoInduksi;
+                document.getElementById('inductionPhotoPreviewBox').classList.remove('hidden');
+            }
+
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+
+        // EXPORT TO EXCEL / CSV
+        function exportToExcel() {
+            const startDate = document.getElementById('filterStartDate').value || 'Awal';
+            const endDate = document.getElementById('filterEndDate').value || 'Akhir';
+            
+            const dataToExport = inductionRecords.map(rec => ({
+                'Tanggal Induksi': rec.tglInduksi,
+                'Nama Karyawan': rec.nama,
+                'SID': rec.sid,
+                'Perusahaan': rec.perusahaan,
+                'Jenis Induksi': rec.jenisInduksi,
+                'Penyampaian Induksi': rec.penyampaian,
+                'Nilai Fatigue Management': rec.fatigueVal
+            }));
+
+            if(typeof XLSX !== 'undefined') {
+                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Arsip Induksi");
+                XLSX.writeFile(workbook, `Laporan_Induksi_Plant_${startDate}_sd_${endDate}.xlsx`);
+            } else {
+                let csvContent = "data:text/csv;charset=utf-8,Tanggal,Nama,SID,Perusahaan,Jenis Induksi,Penyampaian,Fatigue\n";
+                dataToExport.forEach(row => {
+                    csvContent += `"${row['Tanggal Induksi']}","${row['Nama Karyawan']}","${row['SID']}","${row['Perusahaan']}","${row['Jenis Induksi']}","${row['Penyampaian Induksi']}","${row['Nilai Fatigue Management']}"\n`;
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Laporan_Induksi_Plant_${startDate}_sd_${endDate}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // EXPORT TO PDF (html2pdf.js)
+        function exportToPDF() {
+            const element = document.getElementById('pdfReportContainer');
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5],
+                filename:     `Laporan_Arsip_Induksi_MTL_${new Date().toISOString().split('T')[0]}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+
+            if(typeof html2pdf !== 'undefined') {
+                html2pdf().set(opt).from(element).save();
+            } else {
+                window.print();
+            }
+        }
+
+        // ================= SEARCH & INDUCTION FORM =================
+        function handleSearch(e) {
+            e.preventDefault();
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            if(!query) {
+                alert('Silakan masukkan Nama atau SID Karyawan terlebih dahulu.');
+                return;
+            }
+
+            // Find Employee in master
+            const match = employees.find(emp => 
+                emp.nama.toLowerCase().includes(query) || 
+                emp.sid.toLowerCase().includes(query)
+            );
+
+            if(match) {
+                openInductionForm(match);
+            } else {
+                alert(`Karyawan dengan Nama/SID "${query}" tidak ditemukan di Master Data Karyawan. Silakan minta Admin menambahkannya terlebih dahulu.`);
+            }
+        }
+
+        function openInductionForm(emp) {
+            document.getElementById('empFormEmpId').value = emp.id;
+            document.getElementById('empFormNama').innerText = emp.nama;
+            document.getElementById('empFormTglLahir').innerText = formatDateIndo(emp.tglLahir);
+            document.getElementById('empFormNik').innerText = emp.nik;
+            document.getElementById('empFormSid').innerText = emp.sid;
+            document.getElementById('empFormJabatan').innerText = emp.jabatan;
+            document.getElementById('empFormPerusahaan').innerText = emp.perusahaan;
+            document.getElementById('empFormNoHp').innerText = emp.noHp;
+
+            const imgEl = document.getElementById('empFormFoto');
+            const iconEl = document.getElementById('empFormFotoPlaceholder');
+            if(emp.foto) {
+                imgEl.src = emp.foto;
+                imgEl.classList.remove('hidden');
+                iconEl.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                iconEl.classList.remove('hidden');
+            }
+
+            // Reset Form fields
+            document.getElementById('fieldJenisInduksi').value = '';
+            document.getElementById('fieldPenyampaian').value = '';
+            document.getElementById('fieldFatigue').value = '';
+            document.getElementById('fieldFotoInduksi').value = '';
+            document.getElementById('inductionPhotoPreviewBox').classList.add('hidden');
+
+            showSection('form');
+        }
+
+        function previewInductionPhoto(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    document.getElementById('inductionPhotoPreview').src = evt.target.result;
+                    document.getElementById('inductionPhotoPreviewBox').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function submitInductionForm(e) {
+            e.preventDefault();
+            const empId = document.getElementById('empFormEmpId').value;
+            const emp = employees.find(e => e.id === empId);
+
+            const jenisInduksi = document.getElementById('fieldJenisInduksi').value;
+            const penyampaian = document.getElementById('fieldPenyampaian').value;
+            const fatigueVal = document.getElementById('fieldFatigue').value;
+            const fotoPreview = document.getElementById('inductionPhotoPreview').src;
+
+            const newRecord = {
+                id: 'IND-' + Date.now().toString().substr(-5),
+                empId: emp.id,
+                nama: emp.nama,
+                sid: emp.sid,
+                perusahaan: emp.perusahaan,
+                jenisInduksi: jenisInduksi,
+                penyampaian: penyampaian,
+                fatigueVal: fatigueVal,
+                fotoInduksi: fotoPreview || '',
+                tglInduksi: new Date().toISOString().split('T')[0]
+            };
+
+            inductionRecords.unshift(newRecord);
+            saveDataToStorage();
+
+            // Show Success Modal
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function closeSuccessModalAndReturn() {
+            document.getElementById('successModal').classList.add('hidden');
+            showSection('dashboard');
+        }
+
+        // ================= ADMIN & MASTER MANAGEMENT =================
+        function openAdminModal() {
+            if(isAdminLoggedIn) {
+                showSection('admin');
+            } else {
+                document.getElementById('adminPasswordInput').value = '';
+                document.getElementById('adminAuthModal').classList.remove('hidden');
+            }
+        }
+
+        function verifyAdminPassword(e) {
+            e.preventDefault();
+            const pass = document.getElementById('adminPasswordInput').value;
+            if(pass === 'berau@22') {
+                isAdminLoggedIn = true;
+                closeModal('adminAuthModal');
+                showSection('admin');
+            } else {
+                alert('Password Admin Salah! Akses ditolak.');
+            }
+        }
+
+        function logoutAdmin() {
+            isAdminLoggedIn = false;
+            showSection('dashboard');
+        }
+
+        function switchAdminTab(tab) {
+            const masterTab = document.getElementById('adminMasterTab');
+            const archiveTab = document.getElementById('adminArchiveTab');
+            const btnMaster = document.getElementById('tabBtnMaster');
+            const btnArchive = document.getElementById('tabBtnArchive');
+
+            if(tab === 'master') {
+                masterTab.classList.remove('hidden');
+                archiveTab.classList.add('hidden');
+                btnMaster.className = "px-4 py-2.5 text-sm font-bold rounded-t-lg bg-amber-500 text-slate-950 flex items-center gap-2";
+                btnArchive.className = "px-4 py-2.5 text-sm font-bold rounded-t-lg bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
+            } else {
+                masterTab.classList.add('hidden');
+                archiveTab.classList.remove('hidden');
+                btnArchive.className = "px-4 py-2.5 text-sm font-bold rounded-t-lg bg-amber-500 text-slate-950 flex items-center gap-2";
+                btnMaster.className = "px-4 py-2.5 text-sm font-bold rounded-t-lg bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
+            }
+        }
+
+        function renderMasterEmployeeTable() {
+            const tbody = document.getElementById('masterEmployeeTable');
+            tbody.innerHTML = '';
+
+            employees.forEach((emp) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50 border-b border-slate-800';
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center">
+                            ${emp.foto ? `<img src="${emp.foto}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-slate-500 text-xs"></i>`}
+                        </div>
+                    </td>
+                    <td class="p-3 font-bold text-white">${emp.nama}</td>
+                    <td class="p-3 text-xs">${formatDateIndo(emp.tglLahir)}</td>
+                    <td class="p-3 text-xs font-mono">${emp.nik}</td>
+                    <td class="p-3 text-xs font-mono font-bold text-amber-400">${emp.sid}</td>
+                    <td class="p-3 text-xs">${emp.jabatan}</td>
+                    <td class="p-3 text-xs">${emp.perusahaan}</td>
+                    <td class="p-3 text-xs">${emp.noHp}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="editEmployee('${emp.id}')" title="Edit Data" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 p-1.5 rounded hover:bg-amber-500 hover:text-slate-950 transition-colors">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteEmployee('${emp.id}')" title="Hapus Data" class="bg-red-500/20 text-red-400 border border-red-500/40 p-1.5 rounded hover:bg-red-600 hover:text-white transition-colors">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openAddEmployeeModal() {
+            document.getElementById('employeeModalTitle').innerText = 'Tambah Master Karyawan';
+            document.getElementById('editEmpId').value = '';
+            document.getElementById('employeeForm').reset();
+            document.getElementById('mFotoBase64').value = '';
+            document.getElementById('employeeModal').classList.remove('hidden');
+        }
+
+        function editEmployee(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if(!emp) return;
+
+            document.getElementById('employeeModalTitle').innerText = 'Edit Master Karyawan';
+            document.getElementById('editEmpId').value = emp.id;
+            document.getElementById('mNama').value = emp.nama;
+            document.getElementById('mTglLahir').value = emp.tglLahir;
+            document.getElementById('mNik').value = emp.nik;
+            document.getElementById('mSid').value = emp.sid;
+            document.getElementById('mJabatan').value = emp.jabatan;
+            document.getElementById('mPerusahaan').value = emp.perusahaan;
+            document.getElementById('mNoHp').value = emp.noHp;
+            document.getElementById('mFotoBase64').value = emp.foto || '';
+
+            document.getElementById('employeeModal').classList.remove('hidden');
+        }
+
+        function handleFotoUpload(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    document.getElementById('mFotoBase64').value = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveEmployee(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editEmpId').value;
+            const nama = document.getElementById('mNama').value.trim();
+            const tglLahir = document.getElementById('mTglLahir').value;
+            const nik = document.getElementById('mNik').value.trim();
+            const sid = document.getElementById('mSid').value.trim();
+            const jabatan = document.getElementById('mJabatan').value.trim();
+            const perusahaan = document.getElementById('mPerusahaan').value.trim();
+            const noHp = document.getElementById('mNoHp').value.trim();
+            const foto = document.getElementById('mFotoBase64').value;
+
+            if(editId) {
+                // Edit existing
+                const index = employees.findIndex(e => e.id === editId);
+                if(index !== -1) {
+                    employees[index] = { id: editId, nama, tglLahir, nik, sid, jabatan, perusahaan, noHp, foto };
+                }
+            } else {
+                // New employee
+                const newEmp = {
+                    id: 'EMP-' + Date.now().toString().substr(-5),
+                    nama, tglLahir, nik, sid, jabatan, perusahaan, noHp, foto
+                };
+                employees.push(newEmp);
+            }
+
+            saveDataToStorage();
+            renderMasterEmployeeTable();
+            renderDashboard();
+            closeModal('employeeModal');
+        }
+
+        function viewPhoto(imgSrc) {
+            const w = window.open("");
+            w.document.write(`<img src="${imgSrc}" style="max-width:100%; height:auto;">`);
+        }
+
+        // UTILS
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function formatDateIndo(dateStr) {
+            if(!dateStr) return '-';
+            const d = new Date(dateStr);
+            if(isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+    </script>
+</body>
+</html>
